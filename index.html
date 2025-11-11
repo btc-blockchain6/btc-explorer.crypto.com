@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bitcoin Transaction Explorer</title>
+<style>
+body {
+  background-color: #0b0f1a;
+  color: #e6eef6;
+  font-family: "Inter", sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100vh;
+  margin: 0;
+  padding-top: 40px;
+}
+.card {
+  background-color: #0f1320;
+  border-radius: 12px;
+  padding: 28px 24px;
+  width: 500px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  margin-bottom: 24px;
+}
+h1 {
+  font-size: 22px;
+  margin: 0 0 8px 0;
+  text-align: center;
+}
+p.sub {
+  font-size: 13px;
+  color: #93a3b8;
+  margin: 0 0 20px 0;
+  text-align: center;
+  line-height: 1.4;
+}
+.search-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+input#addressInput {
+  flex-grow: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #1f2435;
+  background-color: #111625;
+  color: #e6eef6;
+  font-family: monospace;
+}
+.btn {
+  background-color: #1b2030;
+  border: none;
+  color: #e6eef6;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.btn:hover {
+  background-color: #222b44;
+}
+.address-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.address-box {
+  background-color: #111625;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-family: monospace;
+  word-break: break-all;
+  flex-grow: 1;
+  min-width: 260px;
+}
+.status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.badge {
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.3s, color 0.3s;
+}
+.badge.checking {
+  background-color: #0b5e5e;
+  color: #00d1b2;
+}
+.badge.unverified {
+  background-color: #3d0f0f;
+  color: #ff5a5a;
+}
+.spinner {
+  border: 2px solid #0b5e5e;
+  border-top: 2px solid #00d1b2;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.progress-bar {
+  flex-grow: 1;
+  height: 6px;
+  background-color: #111625;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background-color: #00d1b2;
+  transition: width 0.4s;
+  border-radius: 6px;
+}
+.info-box {
+  background-color: #111625;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #c1cdd9;
+  margin-top: 12px;
+  line-height: 1.4;
+}
+footer {
+  font-size: 12px;
+  color: #93a3b8;
+  margin-top: 14px;
+  text-align: center;
+}
+
+/* ===== MARKET PRICE SECTION ===== */
+.market-section {
+  background-color: #0f1320;
+  border-radius: 12px;
+  padding: 20px;
+  width: 500px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  color: #e6eef6;
+}
+.market-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.market-header h2 {
+  font-size: 18px;
+  margin: 0;
+  color: #e6eef6;
+}
+.market-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.market-table th, .market-table td {
+  text-align: left;
+  padding: 8px 4px;
+  font-size: 13px;
+}
+.market-table th {
+  color: #93a3b8;
+  font-weight: 600;
+  border-bottom: 1px solid #1f2435;
+}
+.market-table td {
+  border-bottom: 1px solid #111625;
+}
+.market-icon {
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+  margin-right: 6px;
+  border-radius: 50%;
+}
+.price-up {
+  color: #00d1b2;
+}
+.price-down {
+  color: #ff5a5a;
+}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Bitcoin Transaction Explorer</h1>
+  <p class="sub">
+    View transaction status of any Bitcoin address using public blockchain explorers.
+    Powered by <strong>Blockchain.com</strong> and <strong>Crypto.com</strong>.
+  </p>
+
+  <div class="search-row">
+    <input type="text" id="addressInput" placeholder="Enter BTC address..." />
+    <button class="btn" id="checkBtn">Check</button>
+  </div>
+
+  <div class="address-row">
+    <div class="address-box" id="addressText">No address selected</div>
+    <div>
+      <button class="btn" id="copyBtn">Copy</button>
+      <button class="btn" id="exploreBtn">Explore</button>
+      <button class="btn" id="cryptoBtn">Crypto.com</button>
+    </div>
+  </div>
+
+  <div class="status">
+    <div class="badge checking" id="statusBadge">
+      <div class="spinner" id="spinner"></div>
+      <span id="statusText">Waiting...</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressBar"></div>
+    </div>
+  </div>
+
+  <div class="info-box" id="infoBox">
+    Enter a Bitcoin address above and click "Check" (or press Enter) to view its transaction status. 
+    <br><br>
+    <strong>Note:</strong> If a transaction is unverified, a client verification is required. This page does not store private keys or personal data.
+  </div>
+
+  <footer>© 2025 Blockchain Explorer • Powered by Blockchain.com & Crypto.com</footer>
+</div>
+
+<!-- ===== MARKET PRICES WINDOW ===== -->
+<div class="market-section">
+  <div class="market-header">
+    <h2>Market Prices</h2>
+    <span style="font-size:12px;color:#93a3b8;">Live Data</span>
+  </div>
+  <table class="market-table" id="marketTable">
+    <thead>
+      <tr>
+        <th>Coin</th>
+        <th>Price (USD)</th>
+        <th>24h</th>
+      </tr>
+    </thead>
+    <tbody id="marketBody">
+      <!-- Populated dynamically -->
+    </tbody>
+  </table>
+</div>
+
+<script>
+// ===== BTC Explorer script =====
+let currentAddress = "";
+const addressInput = document.getElementById("addressInput");
+const addressText = document.getElementById("addressText");
+const copyBtn = document.getElementById("copyBtn");
+const exploreBtn = document.getElementById("exploreBtn");
+const cryptoBtn = document.getElementById("cryptoBtn");
+const statusBadge = document.getElementById("statusBadge");
+const statusText = document.getElementById("statusText");
+const spinner = document.getElementById("spinner");
+const progressFill = document.getElementById("progressBar");
+const checkBtn = document.getElementById("checkBtn");
+
+function simulateProgress() {
+  let progress = 0;
+  progressFill.style.width = "0%";
+  statusBadge.classList.remove("unverified");
+  statusBadge.classList.add("checking");
+  spinner.style.display = "inline-block";
+  statusText.textContent = "Checking...";
+  const interval = setInterval(() => {
+    progress += Math.random() * 10;
+    if (progress >= 100) {
+      progress = 100;
+      clearInterval(interval);
+      statusBadge.classList.remove("checking");
+      statusBadge.classList.add("unverified");
+      spinner.style.display = "none";
+      statusText.innerHTML = "⚠️ TRANSACTION IS UNVERIFIED. VERIFICATION REQUIRED";
+    }
+    progressFill.style.width = progress + "%";
+  }, 400);
+}
+
+function checkAddress() {
+  const addr = addressInput.value.trim();
+  if (!addr) {
+    alert("Please enter a Bitcoin address.");
+    return;
+  }
+  currentAddress = addr;
+  addressText.textContent = addr;
+  simulateProgress();
+}
+
+checkBtn.addEventListener("click", checkAddress);
+addressInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    checkAddress();
+  }
+});
+
+copyBtn.addEventListener("click", () => {
+  if (!currentAddress) return;
+  navigator.clipboard.writeText(currentAddress).then(() => {
+    copyBtn.textContent = "Copied ✓";
+    setTimeout(() => (copyBtn.textContent = "Copy"), 1400);
+  });
+});
+
+exploreBtn.addEventListener("click", () => {
+  if (!currentAddress) return;
+  window.open("https://www.blockchain.com/explorer/addresses/btc/" + currentAddress, "_blank");
+});
+cryptoBtn.addEventListener("click", () => {
+  if (!currentAddress) return;
+  window.open("https://crypto.com/explorer/bitcoin/address/" + currentAddress, "_blank");
+});
+
+// ===== MARKET PRICES SCRIPT =====
+const coins = ["bitcoin","ethereum","tether","binancecoin","solana"];
+
+async function loadMarketData() {
+  const ids = coins.join(",");
+  const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&per_page=250&page=1&sparkline=false`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const body = document.getElementById("marketBody");
+    body.innerHTML = "";
+    data.forEach(c => {
+      const change = c.price_change_percentage_24h?.toFixed(2) || 0;
+      const cls = change >= 0 ? "price-up" : "price-down";
+      body.innerHTML += `
+        <tr>
+          <td><img src="${c.image}" class="market-icon"> ${c.name} (${c.symbol.toUpperCase()})</td>
+          <td>$${c.current_price.toLocaleString()}</td>
+          <td class="${cls}">${change}%</td>
+        </tr>`;
+    });
+  } catch(e) {
+    console.error("Failed to load market data", e);
+  }
+}
+
+loadMarketData();
+setInterval(loadMarketData, 60000);
+</script>
+</body>
+</html>
